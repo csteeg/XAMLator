@@ -10,12 +10,29 @@ namespace XAMLator.Server
 	{
 		Mono.CSharp.Evaluator eval;
 		Printer printer;
+		bool canEvaluate = false;
 
 		public Task<bool> EvaluateExpression(string expression, string code, EvalResult result)
 		{
 			EnsureConfigured();
 			try
 			{
+				//on real devices we cannot do eval.Evaluate! https://github.com/mono/mono/issues/6616
+				if (!canEvaluate)
+				{
+					//TODO: do we really need expression? why not just pass the type to instantiate
+					//we wouldn't need evaluate for just instantiating the type if there is no code change
+					if (!expression.StartsWith("new ") || !expression.EndsWith("()"))
+						return Task.FromResult(false);
+
+					var typeName = expression.Substring("new ".Length, expression.Length - "new ".Length - "()".Length).Trim();
+					var type = getTypeByName(typeName);
+					if (type == null)
+						return Task.FromResult(false);
+					result.Result = Activator.CreateInstance(type);
+					return Task.FromResult(true);
+				}
+
 				object retResult;
 				bool hasResult;
 
@@ -58,14 +75,25 @@ namespace XAMLator.Server
 			printer = new Printer();
 			var context = new CompilerContext(settings, printer);
 			eval = new Mono.CSharp.Evaluator(context);
-			AppDomain.CurrentDomain.AssemblyLoad += (_, e) =>
+			try
 			{
-				LoadAssembly(e.LoadedAssembly);
-			};
-			foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
-			{
-				LoadAssembly(a);
+				canEvaluate = (eval.Evaluate("new Object()") != null);
 
+			}
+			catch (NotSupportedException)
+			{
+				canEvaluate = false;
+			}
+			if (canEvaluate)
+			{
+				AppDomain.CurrentDomain.AssemblyLoad += (_, e) =>
+				{
+					LoadAssembly(e.LoadedAssembly);
+				};
+				foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+				{
+					LoadAssembly(a);
+				}
 			}
 		}
 
@@ -75,6 +103,36 @@ namespace XAMLator.Server
 			if (name == "mscorlib" || name == "System" || name == "System.Core")
 				return;
 			eval?.ReferenceAssembly(assembly);
+		}
+
+		/// <summary>
+		/// Gets a all Type instances matching the specified class name.
+		/// </summary>
+		/// <param name="className">Name of the class sought.</param>
+		/// <returns>Types that have the class name specified. They may not be in the same namespace.</returns>
+		static Type getTypeByName(string className)
+		{
+			List<Type> returnVal = new List<Type>();
+
+			foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+			{
+				try
+				{
+					Type[] assemblyTypes = a.GetTypes();
+					for (int j = 0; j < assemblyTypes.Length; j++)
+					{
+						if (assemblyTypes[j].FullName == className)
+						{
+							return (assemblyTypes[j]);
+						}
+					}
+				}
+				catch
+				{
+					//just continue with the next assembly
+				}
+			}
+			return null;
 		}
 	}
 
