@@ -35,7 +35,7 @@ namespace XAMLator.Server
 		/// <param name="view">View.</param>
 		public static void LoadXaml(object view)
 		{
-			loadXAML.Invoke(null, new object[] { view, currentEvalRequest.Xaml });
+			loadXAML.Invoke(null, new object[] { view, currentEvalRequest?.Xaml });
 		}
 
 		public Task<EvalResult> Eval(EvalRequest code, TaskScheduler mainScheduler, CancellationToken token)
@@ -126,13 +126,13 @@ namespace XAMLator.Server
 		static string LoadResource(AssemblyName assemblyName, string name)
 		{
 			Log.Information($"Resolving resource {name}");
-			if (name == currentEvalRequest.XamlResourceName)
+			if (name == currentEvalRequest?.XamlResourceName)
 			{
-				return currentEvalRequest.Xaml;
+				return currentEvalRequest?.Xaml;
 			}
 			if (name.EndsWith(".css"))
 			{
-				return currentEvalRequest.StyleSheets[name];
+				return currentEvalRequest?.StyleSheets[name];
 			}
 			return null;
 		}
