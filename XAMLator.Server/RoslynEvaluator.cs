@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -12,22 +13,22 @@ namespace XAMLator.Server
 	{
 		ScriptOptions options;
 
-		public async Task<bool> EvaluateExpression(string evalExpression, string code, EvalResult result)
+		public async Task<IEnumerable<EvalMessage>> EvaluateCode(string code)
 		{
+			if (string.IsNullOrEmpty(code))
+				return Enumerable.Empty<EvalMessage>();
+
 			EnsureConfigured();
 			try
 			{
 				var state = await CSharpScript.RunAsync(code);
-				state = await state.ContinueWithAsync(evalExpression);
-				result.Result = state.ReturnValue;
-				return true;
 			}
 			catch (CompilationErrorException ex)
 			{
-				Log.Error($"Error evaluating {evalExpression}");
-				result.Messages = new EvalMessage[] { new EvalMessage("error", ex.ToString()) };
+				Log.Error($"Error evaluating code");
+				return new EvalMessage[] { new EvalMessage("error", ex.ToString()) };
 			}
-			return false;
+			return Enumerable.Empty<EvalMessage>(); ;
 		}
 
 		void EnsureConfigured()

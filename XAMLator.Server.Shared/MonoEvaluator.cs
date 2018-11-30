@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Mono.CSharp;
@@ -10,58 +11,30 @@ namespace XAMLator.Server
 	{
 		Mono.CSharp.Evaluator eval;
 		Printer printer;
-		bool canEvaluate = false;
 
-		public Task<bool> EvaluateExpression(string expression, string code, EvalResult result)
+		public Task<IEnumerable<EvalMessage>> EvaluateCode(string code)
 		{
+			if (string.IsNullOrEmpty(code))
+				return Task.FromResult(Enumerable.Empty<EvalMessage>());
+
 			EnsureConfigured();
+
 			try
 			{
-				//on real devices we cannot do eval.Evaluate! https://github.com/mono/mono/issues/6616
-				if (!canEvaluate)
-				{
-					//TODO: do we really need expression? why not just pass the type to instantiate
-					//we wouldn't need evaluate for just instantiating the type if there is no code change
-					if (!expression.StartsWith("new ") || !expression.EndsWith("()"))
-						return Task.FromResult(false);
-
-					var typeName = expression.Substring("new ".Length, expression.Length - "new ".Length - "()".Length).Trim();
-					var type = getTypeByName(typeName);
-					if (type == null)
-						return Task.FromResult(false);
-					result.Result = Activator.CreateInstance(type);
-					return Task.FromResult(true);
-				}
-
-				object retResult;
-				bool hasResult;
-
 				printer.Reset();
-				if (!String.IsNullOrEmpty(code))
-				{
-					var ret = eval.Evaluate(code, out retResult, out hasResult);
-				}
-				result.Result = eval.Evaluate(expression);
-				return Task.FromResult(true);
+				eval.Evaluate(code, out object result, out bool result_set);
 			}
 			catch (Exception ex)
 			{
-				Log.Error($"Error creating a new instance of {expression}");
+				Log.Error($"Error evalutaing code");
+				eval = null;
 				if (printer.Messages.Count != 0)
 				{
-					result.Messages = printer.Messages.ToArray();
+					return Task.FromResult((IEnumerable<EvalMessage>)printer.Messages.ToArray());
 				}
-				else
-				{
-					result.Messages = new EvalMessage[] { new EvalMessage("error", ex.ToString()) };
-				}
-				if (!result.HasResult && result.Messages.Length == 0)
-				{
-					result.Messages = new EvalMessage[] { new EvalMessage("error", "Internal Error") };
-				}
-				eval = null;
+				return Task.FromResult((IEnumerable<EvalMessage>)new[] { new EvalMessage("error", ex.ToString()) });
 			}
-			return Task.FromResult(false);
+			return Task.FromResult(Enumerable.Empty<EvalMessage>());
 		}
 
 		void EnsureConfigured()
@@ -75,64 +48,22 @@ namespace XAMLator.Server
 			printer = new Printer();
 			var context = new CompilerContext(settings, printer);
 			eval = new Mono.CSharp.Evaluator(context);
-			try
+			AppDomain.CurrentDomain.AssemblyLoad += (_, e) =>
 			{
-				canEvaluate = (eval.Evaluate("new Object()") != null);
-
-			}
-			catch (NotSupportedException)
+				LoadAssembly(e.LoadedAssembly);
+			};
+			foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
 			{
-				canEvaluate = false;
-			}
-			if (canEvaluate)
-			{
-				AppDomain.CurrentDomain.AssemblyLoad += (_, e) =>
-				{
-					LoadAssembly(e.LoadedAssembly);
-				};
-				foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
-				{
-					LoadAssembly(a);
-				}
+				LoadAssembly(a);
 			}
 		}
 
 		void LoadAssembly(Assembly assembly)
 		{
 			var name = assembly.GetName().Name;
-			if (name == "mscorlib" || name == "System" || name == "System.Core")
+			if (name == "mscorlib" || name == "System" || name == "System.Core" || name.StartsWith("eval-"))
 				return;
 			eval?.ReferenceAssembly(assembly);
-		}
-
-		/// <summary>
-		/// Gets a all Type instances matching the specified class name.
-		/// </summary>
-		/// <param name="className">Name of the class sought.</param>
-		/// <returns>Types that have the class name specified. They may not be in the same namespace.</returns>
-		static Type getTypeByName(string className)
-		{
-			List<Type> returnVal = new List<Type>();
-
-			foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
-			{
-				try
-				{
-					Type[] assemblyTypes = a.GetTypes();
-					for (int j = 0; j < assemblyTypes.Length; j++)
-					{
-						if (assemblyTypes[j].FullName == className)
-						{
-							return (assemblyTypes[j]);
-						}
-					}
-				}
-				catch
-				{
-					//just continue with the next assembly
-				}
-			}
-			return null;
 		}
 	}
 

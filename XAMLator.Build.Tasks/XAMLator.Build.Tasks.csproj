@@ -44,9 +44,6 @@
     <Reference Include="Mono.Cecil.Rocks">
       <HintPath>..\packages\Mono.Cecil.0.10.1\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Framework">
-      <HintPath>..\packages\Microsoft.Build.Framework.15.8.166\lib\net46\Microsoft.Build.Framework.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System.Xaml" />
     <Reference Include="Microsoft.VisualStudio.Setup.Configuration.Interop">
@@ -58,10 +55,13 @@
     <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
       <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Build.Utilities.Core">
-      <HintPath>..\packages\Microsoft.Build.Utilities.Core.15.8.166\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
-    </Reference>
     <Reference Include="System.Configuration" />
+    <Reference Include="Microsoft.Build.Framework">
+      <HintPath>..\packages\Microsoft.Build.Framework.15.9.20\lib\net46\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core">
+      <HintPath>..\packages\Microsoft.Build.Utilities.Core.15.9.20\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\XAMLator.Core\Constants.cs">

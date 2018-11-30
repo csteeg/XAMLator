@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
     xmlns:ios="clr-namespace:Xamarin.Forms.PlatformConfiguration.iOSSpecific;assembly=Xamarin.Forms.Core" 
     ios:Page.UseSafeArea="true" 
+    x:Name="errorPage"
     x:Class="XAMLator.Server.ErrorPage">
     <ContentPage.Content>
         <StackLayout Spacing="0" VerticalOptions="Start">
@@ -14,14 +15,15 @@
                     BackgroundColor="Red"
                     AbsoluteLayout.LayoutBounds="1,1,1,1"
                     AbsoluteLayout.LayoutFlags="All"
-                    TextColor="White"
+                    TextColor="Blue"
                     HorizontalOptions="FillAndExpand"
                     VerticalOptions="FillAndExpand"
                     HorizontalTextAlignment="Center"
                     VerticalTextAlignment="Center"
                     FontSize="30"
                     Text="Preview Error!"/>
-                 <Button Margin="5" Text="Close" TextColor="White" Command="{Binding CloseCommand}"/>
+                 <Button Margin="5" Text="Close" TextColor="White" Command="{Binding CloseCommand,
+                        Source={x:Reference errorPage}}"/>
             </AbsoluteLayout>
             <Label
                 HeightRequest="60"

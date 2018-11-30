@@ -8,11 +8,12 @@ namespace XAMLator
 	public class EvalRequest
 	{
 		public string Declarations;
-		public string NewTypeExpression;
+		public string NewTypeName;
 		public string Xaml;
 		public Dictionary<string, string> StyleSheets;
 		public bool NeedsRebuild;
 		public string XamlResourceName;
+		public string OriginalTypeName;
 	}
 
 	public class EvalMessage : INotifyPropertyChanged

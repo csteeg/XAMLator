@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace XAMLator.Server
@@ -8,9 +9,8 @@ namespace XAMLator.Server
 		/// <summary>
 		/// Evaluates an expression and code before the expression if requested.
 		/// </summary>
-		/// <returns>A new instance of the type.</returns>
-		/// <param name="evalExpression">Type name.</param>
+		/// <returns>True if succeeded.</returns>
 		/// <param name="code">The class code.</param>
-		Task<bool> EvaluateExpression(string evalExpression, string code, EvalResult evalResult);
+		Task<IEnumerable<EvalMessage>> EvaluateCode(string code);
 	}
 }
