@@ -12,6 +12,8 @@ namespace XAMLator.Server
     /// </summary>
     public class Previewer : IPreviewer
     {
+        public static Func<Type, object> TypeActivator { get; set; } = Activator.CreateInstance;
+
         protected PreviewPage previewPage;
         protected ErrorPage errorPage;
         protected Dictionary<Type, object> viewModelsMapping;
@@ -43,21 +45,31 @@ namespace XAMLator.Server
         /// <param name="res">Res.</param>
         public virtual async Task Preview(EvalResult res)
         {
-            Log.Information($"Visualizing result {res.Result}");
-            Page page = res.Result as Page;
-            if (page == null && res.Result is View view)
+            Log.Information($"Visualizing result {res.ResultType}");
+            try
             {
-                page = new ContentPage { Content = view };
-            }
-            if (page != null)
-            {
-                if (viewModelsMapping.TryGetValue(res.Result.GetType(), out object viewModel))
+                var result = TypeActivator(res.ResultType);
+                Page page = result as Page;
+                if (page == null && result is View view)
                 {
-                    page.BindingContext = viewModel;
+                    page = new ContentPage { Content = view };
                 }
-                await EnsurePresented();
-                NavigationPage.SetHasNavigationBar(previewPage, true);
-                previewPage.ChangePage(page);
+                if (page != null)
+                {
+                    if (viewModelsMapping.TryGetValue(res.ResultType, out object viewModel))
+                    {
+                        page.BindingContext = viewModel;
+                    }
+                    await EnsurePresented();
+                    NavigationPage.SetHasNavigationBar(previewPage, true);
+                    previewPage.ChangePage(page);
+                }
+            }
+            catch (Exception exc)
+            {
+                var errorViewModel = new ErrorViewModel();
+                errorViewModel.SetError("Error creating preview", exc);
+                NotifyError(errorViewModel);
             }
         }
 

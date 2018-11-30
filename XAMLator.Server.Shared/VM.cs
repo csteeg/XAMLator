@@ -33,7 +33,6 @@ namespace XAMLator.Server
         public static ConcurrentDictionary<Type, Type> TypeReplacements { get; } = new ConcurrentDictionary<Type, Type>();
         public static ConcurrentDictionary<Type, EvalResult> EvalResults { get; } = new ConcurrentDictionary<Type, EvalResult>();
         public static ConcurrentDictionary<string, ConcurrentDictionary<string, string>> AssemblyResources { get; } = new ConcurrentDictionary<string, ConcurrentDictionary<string, string>>();
-        public static Func<Type, object> TypeActivator { get; set; } = Activator.CreateInstance;
 
         /// <summary>
         /// Hook used by new instances to load their XAML instead of retrieving
@@ -84,7 +83,7 @@ namespace XAMLator.Server
 
             try
             {
-                var originalType = GetTypeByName(request.OriginalTypeName);
+                var originalType = evalResult.OriginalType = GetTypeByName(request.OriginalTypeName);
                 evalResult.Xaml = AddAssemblyNamesToXaml(request.Xaml, originalType.Assembly);
                 EvalResults.AddOrUpdate(originalType, evalResult, (_, __) => evalResult);
                 UpdateAssemblyResources(originalType.Assembly.GetName(), request.XamlResourceName, evalResult.Xaml, request.StyleSheets);
@@ -101,11 +100,12 @@ namespace XAMLator.Server
                     TypeReplacements.AddOrUpdate(originalType, newType, (_, __) => newType);
                     EvalResults.AddOrUpdate(newType, evalResult, (_, __) => evalResult);
                     UpdateAssemblyResources(newType.Assembly.GetName(), request.XamlResourceName, evalResult.Xaml, request.StyleSheets);
-                    evalResult.Result = TypeActivator(newType);
+
+                    evalResult.ResultType = newType;
                 }
                 else
                 {
-                    evalResult.Result = TypeActivator(originalType);
+                    evalResult.ResultType = originalType;
                 }
             }
             catch (Exception exc)
@@ -115,7 +115,7 @@ namespace XAMLator.Server
 
             sw.Stop();
 
-            Log.Debug($"Evaluation ended with result  {evalResult.Result}");
+            Log.Debug($"Evaluation ended with result  {evalResult.ResultType}");
 
             evalResult.Duration = sw.Elapsed;
             return evalResult;

@@ -38,8 +38,9 @@ namespace XAMLator
 	{
 		public EvalMessage[] Messages;
 		public TimeSpan Duration;
-		public object Result;
-		public bool HasResult => Result != null;
+		public Type ResultType;
+		public Type OriginalType;
+		public bool HasResult => ResultType != null;
 		public string Xaml;
 
 		public bool HasErrors
