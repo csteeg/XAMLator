@@ -25,9 +25,13 @@ namespace XAMLator.Server
             ReplaceResourcesProvider();
         }
 
-        public VM()
+        public VM(IEnumerable<Assembly> referenceAssemblies = null)
         {
-            evaluator = new Evaluator();
+            evaluator = new Evaluator()
+            {
+                Assemblies = referenceAssemblies
+            };
+
         }
 
         public static ConcurrentDictionary<Type, Type> TypeReplacements { get; } = new ConcurrentDictionary<Type, Type>();

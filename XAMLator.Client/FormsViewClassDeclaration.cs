@@ -85,14 +85,12 @@ namespace XAMLator.Client
 		/// <param name="codeBehindFilePath">Code behind file path.</param>
 		/// <param name="xaml">Xaml.</param>
 		public FormsViewClassDeclaration(ClassDeclarationSyntax classDeclarationSyntax, SemanticModel model,
-										 string codeBehindFilePath, XAMLDocument xaml)
+										 string codeBehindFilePath, string xamlFilePath)
 		{
 			this.codeBehindFilePath = codeBehindFilePath;
-			this.xamlFilePath = xaml.FilePath;
+			this.xamlFilePath = xamlFilePath;
 			StyleSheets = new Dictionary<string, string>();
 			FillClassInfo(classDeclarationSyntax, model);
-			UpdateXaml(xaml);
-			UpdateCode(classDeclarationSyntax);
 			classesCache.Add(this);
 		}
 
@@ -110,7 +108,6 @@ namespace XAMLator.Client
 			Namespace = xaml.Type.Substring(0, xaml.Type.LastIndexOf('.'));
 			ClassName = xaml.Type.Split('.').Last();
 			classesCache.Add(this);
-			UpdateXaml(xaml);
 		}
 
 		/// <summary>
@@ -146,7 +143,7 @@ namespace XAMLator.Client
 		/// document and still needs it's class initialization.
 		/// </summary>
 		/// <value><c>true</c> if needs class initialization; otherwise, <c>false</c>.</value>
-		public bool NeedsClassInitialization { get; private set; } = true;
+		public bool NeedsClassInitialization { get; set; } = true;
 
 		/// <summary>
 		/// Gets the XAML of the view

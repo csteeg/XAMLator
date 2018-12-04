@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,12 +34,14 @@ namespace XAMLator.Server
             errorViewModel = new ErrorViewModel();
         }
 
-        public static Task<bool> Run(Dictionary<Type, object> viewModelsMapping = null, IPreviewer previewer = null, string ideIP = null, int idePort = Constants.DEFAULT_PORT)
+        public static Task<bool> Run(Dictionary<Type, object> viewModelsMapping = null, IPreviewer previewer = null, string ideIP = null, int idePort = Constants.DEFAULT_PORT,
+            IEnumerable<Assembly> referenceAssemblies = null)
         {
-            return Instance.RunInternal(viewModelsMapping, previewer, ideIP, idePort);
+            return Instance.RunInternal(viewModelsMapping, previewer, ideIP, idePort, referenceAssemblies);
         }
 
-        internal async Task<bool> RunInternal(Dictionary<Type, object> viewModelsMapping, IPreviewer previewer, string ideIP = null, int idePort = Constants.DEFAULT_PORT)
+        internal async Task<bool> RunInternal(Dictionary<Type, object> viewModelsMapping, IPreviewer previewer, string ideIP = null, int idePort = Constants.DEFAULT_PORT,
+            IEnumerable<Assembly> referenceAssemblies = null)
         {
             if (isRunning)
             {
@@ -56,7 +59,7 @@ namespace XAMLator.Server
                 previewer = new Previewer(viewModelsMapping);
             }
             this.previewer = previewer;
-            vm = new VM();
+            vm = new VM(referenceAssemblies);
             isRunning = true;
             return true;
         }

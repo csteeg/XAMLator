@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace XAMLator.Client
 {
@@ -22,7 +23,7 @@ namespace XAMLator.Client
 																		  SemanticModel semanticModel)
 		{
 			// FIXME: Support any kind of types, not just Xamarin.Forms views
-			if (!fileName.EndsWith(".xaml") && !fileName.EndsWith(".xaml.cs"))
+			if (!fileName.EndsWith(".xaml") && !fileName.EndsWith(".cs"))
 			{
 				return null;
 			}
@@ -45,7 +46,7 @@ namespace XAMLator.Client
 				await xamlClass.UpdateXaml(xamlDocument);
 			}
 			// The document is code behind
-			else if (fileName.EndsWith(".xaml.cs"))
+			else if (fileName.EndsWith(".cs"))
 			{
 				var classDeclaration = FormsViewClassDeclaration.FindClass(syntaxTree, xamlClass.ClassName);
 				if (xamlClass.NeedsClassInitialization)
@@ -71,6 +72,7 @@ namespace XAMLator.Client
 			// Check if we have already an instance of the class declaration for that file
 			if (FormsViewClassDeclaration.TryGetByFileName(fileName, out xamlClass))
 			{
+				xamlClass.NeedsClassInitialization = true;
 				return true;
 			}
 
@@ -95,37 +97,65 @@ namespace XAMLator.Client
 				}
 			}
 
-			// FIXME: Handle XF views without XAML
-			// Parse the XAML file 
-			xamlDocument = XAMLDocument.Parse(xamlFilePath, xaml);
-			if (xamlDocument == null)
+			if (!string.IsNullOrEmpty(xamlFilePath) && !string.IsNullOrEmpty(xaml))
 			{
-				Log.Error("Error parsing XAML");
-				return false;
-			}
+				// FIXME: Handle XF views without XAML
+				// Parse the XAML file 
+				xamlDocument = XAMLDocument.Parse(xamlFilePath, xaml);
+				if (xamlDocument == null)
+				{
+					Log.Error("Error parsing XAML");
+					return false;
+				}
 
-			// Check if we have an instance of class by namespace
-			if (FormsViewClassDeclaration.TryGetByFullNamespace(xamlDocument.Type, out xamlClass))
-			{
-				return true;
+				// Check if we have an instance of class by namespace
+				if (FormsViewClassDeclaration.TryGetByFullNamespace(xamlDocument.Type, out xamlClass))
+				{
+					xamlClass.NeedsClassInitialization = true;
+					return true;
+				}
 			}
 
 			// This is the first time we have an update for this type
 
 			// Create a new class declaration instance from the syntax tree
-			if (syntaxTree != null)
+			if (syntaxTree != null && xamlDocument != null)
 			{
 				var className = xamlDocument.Type.Split('.').Last();
 				var classDeclaration = FormsViewClassDeclaration.FindClass(syntaxTree, className);
 				xamlClass = new FormsViewClassDeclaration(classDeclaration, semanticModel,
-													 codeBehindFilePath, xamlDocument);
+													 codeBehindFilePath, xamlDocument.FilePath);
+			}
+			else if (syntaxTree != null)
+			{
+				var classDeclarations = syntaxTree.GetRoot()
+											 .DescendantNodes()
+											 .OfType<ClassDeclarationSyntax>();
+				if (classDeclarations?.Count() == 0)
+				{
+					Log.Error("No classes found in " + codeBehindFilePath);
+					return false;
+				}
+				if (classDeclarations?.Count() != 1)
+				{
+					Log.Error("Unsupported for now: Multiple classes found in " + codeBehindFilePath);
+					//FIXME: support multiple classes per file
+					return false;
+				}
+
+				xamlClass = new FormsViewClassDeclaration(classDeclarations.First(), semanticModel, codeBehindFilePath, null);
 			}
 			// Create a new class declaration instance from the XAML
-			else
+			else if (xamlDocument != null)
 			{
 				xamlClass = new FormsViewClassDeclaration(codeBehindFilePath, xamlDocument);
-
 			}
+			else
+			{
+				Log.Error("Error parsing " + codeBehindFilePath);
+				return false;
+			}
+
 			return true;
 		}
 	}
