@@ -36,7 +36,6 @@ namespace XAMLator.Client
 			if (boundDoc != null)
 			{
 				boundDoc.Saved -= HandleDocumentSaved;
-				boundDoc.DocumentParsed -= HandleDocumentParsed;
 				boundDoc = null;
 			}
 
@@ -45,14 +44,7 @@ namespace XAMLator.Client
 			{
 				boundDoc = doc;
 				Log.Information($"Monitoring document {boundDoc.FileName}");
-				//if (ext == ".xaml")
-				//{
 				boundDoc.Saved += HandleDocumentSaved;
-				//}
-				//else
-				//{
-				//	boundDoc.DocumentParsed += HandleDocumentParsed;
-				//}
 				EmitDocumentChanged();
 			}
 		}
@@ -64,13 +56,6 @@ namespace XAMLator.Client
 																	   boundDoc.Editor.Text,
 																	   syntaxTree,
 																	   semanticModel));
-		}
-
-		async void HandleDocumentParsed(object sender, EventArgs e)
-		{
-			/*			EmitDocumentChanged(await boundDoc.AnalysisDocument.GetSyntaxTreeAsync(),
-											 await boundDoc.AnalysisDocument.GetSemanticModelAsync());
-			*/
 		}
 
 		async void HandleDocumentSaved(object sender, EventArgs e)
