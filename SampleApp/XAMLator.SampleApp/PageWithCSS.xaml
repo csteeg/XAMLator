@@ -3,13 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:XAMLator.SampleApp"
              x:Class="XAMLator.SampleApp.PageWithCSS"
-             ControlTemplate="{StaticResource TealTemplate}">
+             >
     <ContentPage.Resources>
-        <StyleSheet Source="/Global.css"/>
+        <StyleSheet Source="./Global.css"/>
     </ContentPage.Resources>
     <StackLayout>
         <!-- Place new controls here -->
-        <Label Text="This is my paage!"
+        <Label Text="This is my page!"
            TextColor="White"    
            HorizontalOptions="Center"
            BackgroundColor = "Blue"
