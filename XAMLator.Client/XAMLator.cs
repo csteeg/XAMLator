@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace XAMLator.Client
 {
@@ -36,24 +38,35 @@ namespace XAMLator.Client
 				return;
 			}
 
-			var classDecl = await DocumentParser.ParseDocument(e.Filename, e.Text, e.SyntaxTree, e.SemanticModel);
-
-			if (classDecl == null)
+			EvalRequest request;
+			if (e.Filename.EndsWith(".css"))
 			{
-				return;
+				request = new EvalRequest
+				{
+					ResourceName = e.Filename,
+					Code = e.Text
+				};
 			}
-
-			EvalRequest request = new EvalRequest
+			else
 			{
-				Declarations = classDecl.Code,
-				NeedsRebuild = classDecl.NeedsRebuild,
-				OriginalTypeName = classDecl.FullNamespace,
-				NewTypeName = classDecl.CurrentFullNamespace,
-				Xaml = classDecl.Xaml,
-				XamlResourceName = classDecl.XamlResourceId,
-				StyleSheets = classDecl.StyleSheets
-			};
+				var classDecl = await DocumentParser.ParseDocument(e.Filename, e.Text, e.SyntaxTree, e.SemanticModel);
 
+				if (classDecl == null)
+				{
+					return;
+				}
+
+				request = new EvalRequest
+				{
+					Code = classDecl.Code,
+					NeedsRebuild = classDecl.NeedsRebuild,
+					OriginalTypeName = classDecl.FullNamespace,
+					NewTypeName = classDecl.CurrentFullNamespace,
+					Xaml = classDecl.Xaml,
+					ResourceName = classDecl.ResourceId,
+					StyleSheets = classDecl.StyleSheets
+				};
+			}
 			await server.Send(request);
 		}
 	}

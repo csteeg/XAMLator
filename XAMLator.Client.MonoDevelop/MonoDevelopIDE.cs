@@ -40,18 +40,17 @@ namespace XAMLator.Client
 			}
 
 			var ext = doc?.FileName.Extension;
-			if (ext == ".xaml" || ext == ".cs")
+			if (ext == ".xaml" || ext == ".cs" || ext == ".css")
 			{
 				boundDoc = doc;
 				Log.Information($"Monitoring document {boundDoc.FileName}");
 				boundDoc.Saved += HandleDocumentSaved;
-				EmitDocumentChanged();
 			}
 		}
 
 		void EmitDocumentChanged(SyntaxTree syntaxTree = null, SemanticModel semanticModel = null)
 		{
-			Log.Information($"XAML document changed {boundDoc.Name}");
+			Log.Information($"document changed {boundDoc.Name}");
 			DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(boundDoc.FileName,
 																	   boundDoc.Editor.Text,
 																	   syntaxTree,
@@ -60,7 +59,12 @@ namespace XAMLator.Client
 
 		async void HandleDocumentSaved(object sender, EventArgs e)
 		{
-			EmitDocumentChanged(await boundDoc.AnalysisDocument.GetSyntaxTreeAsync(),
+			if (boundDoc == null)
+				return;
+			if (boundDoc.AnalysisDocument == null)
+				EmitDocumentChanged();
+			else
+				EmitDocumentChanged(await boundDoc.AnalysisDocument.GetSyntaxTreeAsync(),
 					 await boundDoc.AnalysisDocument.GetSemanticModelAsync());
 		}
 
