@@ -6,10 +6,10 @@ using System.Windows.Input;
 
 namespace XAMLator.Server
 {
-    public interface IPreviewer
-    {
-        Task Preview(EvalResult res);
+	public interface IUpdateResultHandler
+	{
+		Task ProcessResult(EvalResult res);
 
-        Task NotifyError(ErrorViewModel errorViewModel);
-    }
+		Task NotifyError(ErrorViewModel errorViewModel);
+	}
 }

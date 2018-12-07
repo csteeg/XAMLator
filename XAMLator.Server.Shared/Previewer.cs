@@ -10,7 +10,7 @@ namespace XAMLator.Server
 	/// <summary>
 	/// Previews requests sent by the IDE.
 	/// </summary>
-	public class Previewer : IPreviewer
+	public class Previewer : IUpdateResultHandler
 	{
 		public static Func<Type, object> TypeActivator { get; set; } = Activator.CreateInstance;
 
@@ -43,7 +43,7 @@ namespace XAMLator.Server
 		/// Preview the specified evaluation result.
 		/// </summary>
 		/// <param name="res">Res.</param>
-		public virtual async Task Preview(EvalResult res)
+		public virtual async Task ProcessResult(EvalResult res)
 		{
 			Log.Information($"Visualizing result {res.ResultType}");
 			try

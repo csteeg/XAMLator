@@ -7,6 +7,9 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Xamarin.Forms;
+using Xamarin.Forms.StyleSheets;
+using Xamarin.Forms.Xaml;
 
 namespace XAMLator.Server
 {
@@ -49,7 +52,7 @@ namespace XAMLator.Server
 				return;
 			if (EvalResults.TryGetValue(view.GetType(), out EvalResult result))
 			{
-				loadXAML.Invoke(null, new object[] { view, result?.Xaml });
+				loadXAML.Invoke(null, new object[] { view, result?.Code });
 			}
 		}
 
@@ -77,7 +80,10 @@ namespace XAMLator.Server
 
 		async Task<EvalResult> EvalOnMainThread(EvalRequest request, CancellationToken token)
 		{
-			EvalResult evalResult = new EvalResult();
+			EvalResult evalResult = new EvalResult()
+			{
+				ResourceName = request.ResourceName
+			};
 
 			var sw = new System.Diagnostics.Stopwatch();
 
@@ -87,29 +93,41 @@ namespace XAMLator.Server
 
 			try
 			{
-				var originalType = evalResult.OriginalType = GetTypeByName(request.OriginalTypeName);
-				evalResult.Xaml = AddAssemblyNamesToXaml(request.Xaml, originalType.Assembly);
-				EvalResults.AddOrUpdate(originalType, evalResult, (_, __) => evalResult);
-				UpdateAssemblyResources(originalType.Assembly.GetName(), request.XamlResourceName, evalResult.Xaml, request.StyleSheets);
-
-				if (PlatformConfig.SupportsEvaluation)
+				if (request.ResourceName?.EndsWith(".css") ?? false) //TODO: since we don't have anything to get back our stylesheet's id, we'll do this by convention
 				{
-					if (request.NeedsRebuild)
-					{
-						var errors = await evaluator.EvaluateCode(request.Declarations);
-						if (errors?.Any() ?? false)
-							evalResult.Messages = errors.ToArray();
-					}
-					var newType = GetTypeByName(request.NewTypeName);
-					TypeReplacements.AddOrUpdate(originalType, newType, (_, __) => newType);
-					EvalResults.AddOrUpdate(newType, evalResult, (_, __) => evalResult);
-					UpdateAssemblyResources(newType.Assembly.GetName(), request.XamlResourceName, evalResult.Xaml, request.StyleSheets);
-
-					evalResult.ResultType = newType;
+					evalResult.Code = request.Code;
+					evalResult.ResultType = typeof(StyleSheet);
+					evalResult.ResourceName = request.ResourceName;
+					return evalResult;
 				}
 				else
 				{
-					evalResult.ResultType = originalType;
+					var originalType = evalResult.OriginalType = GetTypeByName(request.OriginalTypeName);
+					evalResult.Code = AddAssemblyNamesToXaml(request.Xaml, originalType.Assembly);
+					EvalResults.AddOrUpdate(originalType, evalResult, (_, __) => evalResult);
+					UpdateAssemblyResources(originalType.Assembly.GetName(), request.ResourceName, evalResult.Code, request.StyleSheets);
+
+					if (PlatformConfig.SupportsEvaluation)
+					{
+						if (request.NeedsRebuild)
+						{
+							var errors = await evaluator.EvaluateCode(request.Code);
+							if (errors?.Any() ?? false)
+								evalResult.Messages = errors.ToArray();
+						}
+						var newType = GetTypeByName(request.NewTypeName);
+						if (originalType != newType)
+							TypeReplacements.AddOrUpdate(originalType, newType, (_, __) => newType);
+
+						EvalResults.AddOrUpdate(newType, evalResult, (_, __) => evalResult);
+						UpdateAssemblyResources(newType.Assembly.GetName(), request.ResourceName, evalResult.Code, request.StyleSheets);
+
+						evalResult.ResultType = newType;
+					}
+					else
+					{
+						evalResult.ResultType = originalType;
+					}
 				}
 			}
 			catch (Exception exc)

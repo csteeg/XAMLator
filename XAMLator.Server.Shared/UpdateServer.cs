@@ -14,33 +14,33 @@ namespace XAMLator.Server
 	/// Preview server that process HTTP requests, evaluates them in the <see cref="VM"/>
 	/// and preview them with the <see cref="Previewer"/>.
 	/// </summary>
-	public class PreviewServer
+	public class UpdateServer
 	{
-		static readonly PreviewServer serverInstance = new PreviewServer();
+		static readonly UpdateServer serverInstance = new UpdateServer();
 
 		VM vm;
 		TaskScheduler mainScheduler;
-		IPreviewer previewer;
+		IUpdateResultHandler previewer;
 		bool isRunning;
 		TcpCommunicatorClient client;
 		ErrorViewModel errorViewModel;
 
-		internal static PreviewServer Instance => serverInstance;
+		internal static UpdateServer Instance => serverInstance;
 
-		PreviewServer()
+		UpdateServer()
 		{
 			client = new TcpCommunicatorClient();
 			client.DataReceived += HandleDataReceived;
 			errorViewModel = new ErrorViewModel();
 		}
 
-		public static Task<bool> Run(Dictionary<Type, object> viewModelsMapping = null, IPreviewer previewer = null, string ideIP = null, int idePort = Constants.DEFAULT_PORT,
+		public static Task<bool> Run(Dictionary<Type, object> viewModelsMapping = null, IUpdateResultHandler previewer = null, string ideIP = null, int idePort = Constants.DEFAULT_PORT,
 			IEnumerable<Assembly> referenceAssemblies = null)
 		{
 			return Instance.RunInternal(viewModelsMapping, previewer, ideIP, idePort, referenceAssemblies);
 		}
 
-		internal async Task<bool> RunInternal(Dictionary<Type, object> viewModelsMapping, IPreviewer previewer, string ideIP = null, int idePort = Constants.DEFAULT_PORT,
+		internal async Task<bool> RunInternal(Dictionary<Type, object> viewModelsMapping, IUpdateResultHandler previewer, string ideIP = null, int idePort = Constants.DEFAULT_PORT,
 			IEnumerable<Assembly> referenceAssemblies = null)
 		{
 			if (isRunning)
@@ -108,14 +108,14 @@ namespace XAMLator.Server
 			try
 			{
 				result = await vm.Eval(request, mainScheduler, CancellationToken.None);
-				if (result.HasResult)
+				if (result?.HasResult ?? false)
 				{
 					var tcs = new TaskCompletionSource<bool>();
 					Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
 					{
 						try
 						{
-							await previewer.Preview(result);
+							await previewer.ProcessResult(result);
 							tcs.SetResult(true);
 						}
 						catch (Exception ex)
@@ -127,7 +127,7 @@ namespace XAMLator.Server
 					});
 					await tcs.Task;
 				}
-				else
+				else if (result != null)
 				{
 					Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
 					{
