@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace XAMLator
 {
@@ -102,12 +103,13 @@ namespace XAMLator
 			json += '\0';
 			var encoding = new UTF8Encoding(false);
 			byte[] bytesToSend = encoding.GetBytes(json);
-			foreach (var client in clients)
+
+			await Task.WhenAll(clients.Select(client =>
 			{
 				if (client.Value.Item1.Connected)
 				{
 					Log.Debug($"Sending to:{client.Key}");
-					await client.Value.Item1.GetStream().WriteAsync(bytesToSend, 0, bytesToSend.Length);
+					return client.Value.Item1.GetStream().WriteAsync(bytesToSend, 0, bytesToSend.Length);
 				}
 				else
 				{
@@ -115,8 +117,9 @@ namespace XAMLator
 					client.Value.Item1.Close();
 					clients.TryRemove(client.Key, out Tuple<TcpClient, CancellationTokenSource> removedClient);
 					removedClient?.Item2.Cancel();
+					return Task.CompletedTask;
 				}
-			}
+			})).ConfigureAwait(false);
 			//Improve return if errors
 			return true;
 		}
