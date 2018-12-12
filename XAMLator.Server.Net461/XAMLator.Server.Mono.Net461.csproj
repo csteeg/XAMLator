@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <Import Project="..\packages\Xamarin.Forms.3.4.0.1008975\build\Xamarin.Forms.props" Condition="Exists('..\packages\Xamarin.Forms.3.4.0.1008975\build\Xamarin.Forms.props')" />
     <PropertyGroup>
@@ -58,6 +58,12 @@
     </ItemGroup>
     <ItemGroup>
         <None Include="packages.config" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\XAMLator.Abstractions\XAMLator.Server.Abstractions.csproj">
+        <Project>{0C6BF9E1-F832-4B2E-AD01-2B9BDCDB85E3}</Project>
+        <Name>XAMLator.Server.Abstractions</Name>
+      </ProjectReference>
     </ItemGroup>
     <Import Project="..\XAMLator.Server.Shared\XAMLator.Server.Shared.projitems" Label="Shared" Condition="Exists('..\XAMLator.Server.Shared\XAMLator.Server.Shared.projitems')" />
     <Import Project="..\XAMLator.Core\XAMLator.Core.projitems" Label="Shared" Condition="Exists('..\XAMLator.Core\XAMLator.Core.projitems')" />

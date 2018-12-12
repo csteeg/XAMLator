@@ -19,14 +19,19 @@
     <Compile Remove="Previewer.cs" />
     <Compile Remove="Class1.cs" />
     <Compile Remove="VM.cs" />
-    <Compile Include="..\XAMLator.Server.Shared\PlatformConfig.cs">
-      <Link>PlatformConfig.cs</Link>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="2.10.0" />
     <PackageReference Include="Xamarin.Forms" Version="3.4.0.1008975" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\XAMLator.Abstractions\XAMLator.Server.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\XAMLator.Server.Shared\PlatformConfig.cs">
+      <Link>PlatformConfig.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="..\XAMLator.Server.Shared\XAMLator.Server.Shared.projitems" Label="Shared" Condition="Exists('..\XAMLator.Server.Shared\XAMLator.Server.Shared.projitems')" />
   <Import Project="..\XAMLator.Core\XAMLator.Core.projitems" Label="Shared" Condition="Exists('..\XAMLator.Core\XAMLator.Core.projitems')" />

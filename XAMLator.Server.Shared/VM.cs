@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.StyleSheets;
 using Xamarin.Forms.Xaml;
+using XAMLator.Server.Abstractions;
 
 namespace XAMLator.Server
 {
@@ -18,13 +19,11 @@ namespace XAMLator.Server
 	/// </summary>
 	public class VM
 	{
-		static MethodInfo loadXAML;
 		readonly object mutex = new object();
 		IEvaluator evaluator;
 
 		static VM()
 		{
-			ResolveLoadMethod();
 			ReplaceResourcesProvider();
 		}
 
@@ -34,26 +33,6 @@ namespace XAMLator.Server
 			{
 				Assemblies = referenceAssemblies
 			};
-
-		}
-
-		public static ConcurrentDictionary<Type, Type> TypeReplacements { get; } = new ConcurrentDictionary<Type, Type>();
-		public static ConcurrentDictionary<Type, EvalResult> EvalResults { get; } = new ConcurrentDictionary<Type, EvalResult>();
-		public static ConcurrentDictionary<string, ConcurrentDictionary<string, string>> AssemblyResources { get; } = new ConcurrentDictionary<string, ConcurrentDictionary<string, string>>();
-
-		/// <summary>
-		/// Hook used by new instances to load their XAML instead of retrieving
-		/// it from the assembly.
-		/// </summary>
-		/// <param name="view">View.</param>
-		public static void LoadXaml(object view)
-		{
-			if (view == null)
-				return;
-			if (EvalResults.TryGetValue(view.GetType(), out EvalResult result))
-			{
-				loadXAML.Invoke(null, new object[] { view, result?.Code });
-			}
 		}
 
 		public Task<EvalResult> Eval(EvalRequest request, TaskScheduler mainScheduler, CancellationToken token)
@@ -104,7 +83,7 @@ namespace XAMLator.Server
 				{
 					var originalType = evalResult.OriginalType = GetTypeByName(request.OriginalTypeName);
 					evalResult.Code = AddAssemblyNamesToXaml(request.Xaml, originalType.Assembly);
-					EvalResults.AddOrUpdate(originalType, evalResult, (_, __) => evalResult);
+					VMState.EvalResults.AddOrUpdate(originalType, evalResult, (_, __) => evalResult);
 					UpdateAssemblyResources(originalType.Assembly.GetName(), request.ResourceName, evalResult.Code, request.StyleSheets);
 
 					if (PlatformConfig.SupportsEvaluation)
@@ -117,9 +96,9 @@ namespace XAMLator.Server
 						}
 						var newType = GetTypeByName(request.NewTypeName);
 						if (originalType != newType)
-							TypeReplacements.AddOrUpdate(originalType, newType, (_, __) => newType);
+							VMState.TypeReplacements.AddOrUpdate(originalType, newType, (_, __) => newType);
 
-						EvalResults.AddOrUpdate(newType, evalResult, (_, __) => evalResult);
+						VMState.EvalResults.AddOrUpdate(newType, evalResult, (_, __) => evalResult);
 						UpdateAssemblyResources(newType.Assembly.GetName(), request.ResourceName, evalResult.Code, request.StyleSheets);
 
 						evalResult.ResultType = newType;
@@ -145,7 +124,7 @@ namespace XAMLator.Server
 
 		private void UpdateAssemblyResources(AssemblyName assemblyName, string xamlResourceName, string xaml, Dictionary<string, string> styleSheets)
 		{
-			var resources = AssemblyResources.GetOrAdd(assemblyName.FullName, new ConcurrentDictionary<string, string>());
+			var resources = VMState.AssemblyResources.GetOrAdd(assemblyName.FullName, new ConcurrentDictionary<string, string>());
 			if (!string.IsNullOrEmpty(xamlResourceName) && !string.IsNullOrEmpty(xaml))
 			{
 				resources.AddOrUpdate(xamlResourceName, xaml, (_, __) => xaml);
@@ -166,13 +145,6 @@ namespace XAMLator.Server
 			return xaml;
 		}
 
-		static void ResolveLoadMethod()
-		{
-			var xamlAssembly = Assembly.Load(new AssemblyName("Xamarin.Forms.Xaml"));
-			var xamlLoader = xamlAssembly.GetType("Xamarin.Forms.Xaml.XamlLoader");
-			loadXAML = xamlLoader.GetRuntimeMethod("Load", new[] { typeof(object), typeof(string) });
-		}
-
 		static void ReplaceResourcesProvider()
 		{
 			var xamlAssembly = Assembly.Load(new AssemblyName("Xamarin.Forms.Core"));
@@ -188,7 +160,7 @@ namespace XAMLator.Server
 			if (name.Contains('/') || name.Contains('\\'))
 				name = Path.GetFileName(name);
 
-			if (AssemblyResources.TryGetValue(assemblyName.FullName, out ConcurrentDictionary<string, string> resources)
+			if (VMState.AssemblyResources.TryGetValue(assemblyName.FullName, out ConcurrentDictionary<string, string> resources)
 				&& resources.TryGetValue(name, out string resource))
 			{
 				return resource;

@@ -15,7 +15,7 @@ namespace XAMLator.SampleApp
 
 		protected override void OnStart()
 		{
-			XAMLator.Server.PreviewServer.Run();
+			XAMLator.Server.UpdateServer.Run();
 			// Handle when your app starts
 		}
 

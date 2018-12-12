@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
@@ -12,6 +13,14 @@ namespace XAMLator.Server
 	public class Evaluator : IEvaluator
 	{
 		ScriptOptions options;
+
+		private IEnumerable<Assembly> assemblies;
+
+		public IEnumerable<Assembly> Assemblies
+		{
+			get => assemblies ?? AppDomain.CurrentDomain.GetAssemblies();
+			set => assemblies = value;
+		}
 
 		public async Task<IEnumerable<EvalMessage>> EvaluateCode(string code)
 		{
@@ -42,8 +51,7 @@ namespace XAMLator.Server
 
 		void ConfigureVM()
 		{
-			var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => !a.IsDynamic).ToArray();
-			options = ScriptOptions.Default.WithReferences(assemblies);
+			options = ScriptOptions.Default.WithReferences(Assemblies.Where(a => !a.IsDynamic).ToArray());
 		}
 	}
 }

@@ -20,7 +20,7 @@ namespace XAMLator.SampleApp
 			window.LoadApplication(app);
 			window.SetApplicationTitle("XAMLator Sample App");
 			window.Show();
-			PreviewServer.Run();
+			UpdateServer.Run();
 			Gtk.Application.Run();
 		}
 	}
