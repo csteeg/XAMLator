@@ -16,7 +16,7 @@ namespace XAMLator
         public string OriginalTypeName;
     }
 
-    public class EvalMessage : INotifyPropertyChanged
+    public class EvalMessage
     {
         public string MessageType;
         public string Text;
@@ -30,8 +30,6 @@ namespace XAMLator
             Line = line;
             Column = column;
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
     }
 
     public class EvalResult

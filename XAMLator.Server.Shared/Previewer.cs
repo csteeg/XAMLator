@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
@@ -69,7 +68,7 @@ namespace XAMLator.Server
 			{
 				var errorViewModel = new ErrorViewModel();
 				errorViewModel.SetError("Error creating preview", exc);
-				NotifyError(errorViewModel);
+				NotifyError(errorViewModel).ConfigureAwait(false);
 			}
 		}
 
