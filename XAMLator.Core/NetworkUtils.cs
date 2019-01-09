@@ -24,9 +24,16 @@ namespace XAMLator
 		public static IEnumerable<NetworkInterface> GoodInterfaces()
 		{
 			var allInterfaces = NetworkInterface.GetAllNetworkInterfaces();
-			return allInterfaces.Where(x => x.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-									   !x.Name.StartsWith("pdp_ip", StringComparison.Ordinal) &&
-									   x.OperationalStatus == OperationalStatus.Up);
+			return allInterfaces.Where(x =>
+				x.NetworkInterfaceType != NetworkInterfaceType.Loopback
+			   	&& !x.Name.StartsWith("pdp_ip", StringComparison.OrdinalIgnoreCase)
+				&& x.OperationalStatus == OperationalStatus.Up
+				&& (x.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+							x.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+				&& x.OperationalStatus == OperationalStatus.Up
+				&& !x.Name.StartsWith("vEthernet", StringComparison.OrdinalIgnoreCase)
+	  			&& x.Description.IndexOf("Hyper-v", StringComparison.OrdinalIgnoreCase) == -1
+				&& x.Description.IndexOf("Virtual", StringComparison.OrdinalIgnoreCase) == -1);
 		}
 	}
 }
