@@ -64,7 +64,7 @@ namespace XAMLator.Server
 
 		async Task RegisterDevice(string ideIP, int idePort)
 		{
-			ideIP = string.IsNullOrEmpty(ideIP) ? GetIdeIPFromResource() : ideIP;
+			ideIP = string.IsNullOrEmpty(ideIP) ? "127.0.0.1" : ideIP;
 			try
 			{
 				Log.Information($"Connecting to IDE at tcp://{ideIP}:{idePort}");
@@ -74,23 +74,6 @@ namespace XAMLator.Server
 			{
 				Log.Error($"Couldn't register device at {ideIP}");
 				Log.Exception(ex);
-			}
-		}
-
-		string GetIdeIPFromResource()
-		{
-			try
-			{
-				using (Stream stream = GetType().Assembly.GetManifestResourceStream(Constants.IDE_IP_RESOURCE_NAME))
-				using (StreamReader reader = new StreamReader(stream))
-				{
-					return reader.ReadToEnd().Split('\n')[0].Trim();
-				}
-			}
-			catch (Exception ex)
-			{
-				Log.Exception(ex);
-				return null;
 			}
 		}
 

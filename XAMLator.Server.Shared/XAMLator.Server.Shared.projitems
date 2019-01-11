@@ -8,25 +8,4 @@
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>XAMLator.Server.Shared</Import_RootNamespace>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)ErrorViewModel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IEvaluator.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)IUpdateResultHandler.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Previewer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)PreviewPage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UpdateServer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)VM.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ErrorPage.xaml.cs">
-      <DependentUpon>ErrorPage.xaml</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)ErrorPage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)IdeIP.txt">
-      <LogicalName>IdeIP</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
 </Project>
