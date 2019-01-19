@@ -6,6 +6,8 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.LanguageServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using XAMLator.Client.VisualStudio.Listeners;
+using XAMLator.Client.VisualStudio.Services;
 using Task = System.Threading.Tasks.Task;
 
 namespace XAMLator.Client.VisualStudio
@@ -61,17 +63,23 @@ namespace XAMLator.Client.VisualStudio
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            var componentModel = (IComponentModel)(await GetServiceAsync(typeof(SComponentModel)));
+            IComponentModel componentModel = (IComponentModel)(await GetServiceAsync(typeof(SComponentModel)));
+            RunningDocTableEventListener runningDocTableEventListener = new RunningDocTableEventListener();
 
-            // When initialized asynchronously, the current thread may be a background thread at this point.
-            // Do any initialization that requires the UI thread after switching to the UI thread.
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            VisualStudioIde ide = new VisualStudioIde(componentModel.GetService<VisualStudioWorkspace>());
-            RunningDocTableEventListener saveListener = new RunningDocTableEventListener();
-            ide.ListenForChanges(saveListener);
+            IVsRunningDocumentTable iVsRunningDocumentTable =
+                (IVsRunningDocumentTable)GetGlobalService(typeof(SVsRunningDocumentTable));
 
-            XAMLatorMonitor.Init(ide);
+            iVsRunningDocumentTable.AdviseRunningDocTableEvents(runningDocTableEventListener, out uint mRdtCookie);
+
+            AnalysisService analysisService = new AnalysisService(componentModel.GetService<VisualStudioWorkspace>());
+            DocumentService documentService =
+                new DocumentService(iVsRunningDocumentTable, runningDocTableEventListener, analysisService);
+            
+            VisualStudioIde visualStudioIde = new VisualStudioIde(documentService);
+
+            XAMLatorMonitor.Init(visualStudioIde);
             XAMLatorMonitor.Instance.StartMonitoring();
         }
 
