@@ -43,7 +43,7 @@ namespace XAMLator.Client.VisualStudio.Services
             DocumentAnalysis analysis = await analysisService.GetDocumentAsync(pbstrMkDocument, ppunkDocData);
 
             if (analysis != null)
-            OnDocumentChanged?.Invoke(this, analysis);
+                OnDocumentChanged?.Invoke(this, analysis);
         }
 
         private (string pbstrMkDocument, IntPtr ppunkDocData) GetDocumentInfo(uint docCookie)
