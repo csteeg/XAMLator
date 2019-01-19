@@ -40,7 +40,7 @@ namespace XAMLator.Client.VisualStudio.Services
 
             await TaskScheduler.Default;
 
-            DocumentAnalysis analysis = await analysisService.GetDocumentAsync(pbstrMkDocument, ppunkDocData);
+            DocumentAnalysis analysis = await analysisService.GetDocumentAnalysisAsync(pbstrMkDocument, ppunkDocData);
 
             if (analysis != null)
                 OnDocumentChanged?.Invoke(this, analysis);

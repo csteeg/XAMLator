@@ -20,7 +20,7 @@ namespace XAMLator.Client.VisualStudio.Services
             this.workspace = workspace;
         }
 
-        public Task<DocumentAnalysis> GetDocumentAsync(string pbstrMkDocument, IntPtr ppunkDocData)
+        public Task<DocumentAnalysis> GetDocumentAnalysisAsync(string pbstrMkDocument, IntPtr ppunkDocData)
         {
             Task<DocumentAnalysis> result = null;
 
