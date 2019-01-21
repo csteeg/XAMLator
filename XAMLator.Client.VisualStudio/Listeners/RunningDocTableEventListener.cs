@@ -1,23 +1,12 @@
 ﻿using System;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Task = System.Threading.Tasks.Task;
 
-namespace XAMLator.Client.VisualStudio
+namespace XAMLator.Client.VisualStudio.Listeners
 {
     public class RunningDocTableEventListener : IVsRunningDocTableEvents3
     {
-        public event EventHandler<string> FileSaved;
-        private readonly IVsRunningDocumentTable m_RDT;
-
-        public RunningDocTableEventListener()
-        {
-            ThreadHelper.ThrowIfNotOnUIThread();
-
-            m_RDT = (IVsRunningDocumentTable)Package.GetGlobalService(typeof(SVsRunningDocumentTable));
-            m_RDT.AdviseRunningDocTableEvents(this, out uint mRdtCookie);
-        }
+        public event EventHandler<uint> AfterSave;
 
         public int OnAfterFirstDocumentLock(uint docCookie, uint dwRDTLockType, uint dwReadLocksRemaining, uint dwEditLocksRemaining)
         {
@@ -32,7 +21,7 @@ namespace XAMLator.Client.VisualStudio
 
         public int OnAfterSave(uint docCookie)
         {
-            InvokeFileSavedAsync(docCookie);
+            AfterSave?.Invoke(this, docCookie);
 
             return VSConstants.S_OK;
         }
@@ -61,16 +50,6 @@ namespace XAMLator.Client.VisualStudio
         public int OnBeforeSave(uint docCookie)
         {
             return VSConstants.S_OK;
-        }
-
-        private async Task InvokeFileSavedAsync(uint docCookie)
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            m_RDT.GetDocumentInfo(docCookie, out uint pgrfRdtFlags, out uint pdwReadLocks, out uint pdwEditLocks,
-                out string pbstrMkDocument, out IVsHierarchy ppHier, out uint pitemid, out IntPtr ppunkDocData);
-
-            FileSaved?.Invoke(this, pbstrMkDocument);
         }
     }
 }
