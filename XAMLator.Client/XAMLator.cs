@@ -67,7 +67,14 @@ namespace XAMLator.Client
 					StyleSheets = classDecl.StyleSheets
 				};
 			}
-			await server.Send(request);
+
+		    try
+		    {
+		        await server.Send(request);
+		    }
+		    catch (Exception)
+		    {
+		    }
 		}
 	}
 }
